@@ -100,7 +100,8 @@ def Model():
     return model
 
 
-def Model2(optimizer='Adam', lr=0.001, momentum=0.9):
+def Model2():
+
     model2 = Sequential()
     model2.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
                       input_shape=(28, 28, 1)))
@@ -128,7 +129,7 @@ def Model3(optimizer='Adam', lr=0.001, momentum=0.9):
     model3.add(MaxPooling2D(pool_size=(2, 2)))
     model3.add(Flatten())
 
-    model.add(Dropout(0.5)),
+    model3.add(Dropout(0.5)),
     model3.add(Dense(256, activation='relu'))
     model3.add(Dense(num_classes, activation='softmax'))
 
