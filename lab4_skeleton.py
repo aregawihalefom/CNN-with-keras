@@ -75,24 +75,6 @@ y_test = tensorflow.keras.utils.to_categorical(y_test, num_classes)
 ##### TO COMPLETE
 
 # Define Network
-
-def Model2(optimizer='Adam', lr=0.001, momentum=0.9):
-    model2 = Sequential()
-    model2.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
-                      input_shape=(28, 28, 1)))
-    model2.add(MaxPooling2D(pool_size=(2, 2)))
-    model2.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model2.add(MaxPooling2D(pool_size=(2, 2)))
-    model2.add(Flatten())
-    model2.add(Dense(256, activation='relu'))
-    model2.add(Dense(num_classes, activation='softmax'))
-
-    optm = Adam(learning_rate=lr)
-    model2.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
-
-    return model2
-
-
 def Model():
     # creating model instance
     model = Sequential()
@@ -118,24 +100,67 @@ def Model():
     return model
 
 
+def Model2(optimizer='Adam', lr=0.001, momentum=0.9):
+    model2 = Sequential()
+    model2.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
+                      input_shape=(28, 28, 1)))
+    model2.add(MaxPooling2D(pool_size=(2, 2)))
+    model2.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform'))
+    model2.add(MaxPooling2D(pool_size=(2, 2)))
+    model2.add(Flatten())
+    model2.add(Dense(256, activation='relu'))
+    model2.add(Dense(num_classes, activation='softmax'))
+
+    optm = Adam(learning_rate=lr)
+    model2.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    return model2
+
+
+def Model3(optimizer='Adam', lr=0.001, momentum=0.9):
+
+    model3 = Sequential()
+    model3.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
+                      input_shape=(28, 28, 1)))
+    model3.add(MaxPooling2D(pool_size=(2, 2)))
+    model3.add(Dropout(0.2))
+    model3.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform'))
+    model3.add(MaxPooling2D(pool_size=(2, 2)))
+    model3.add(Flatten())
+
+    model.add(Dropout(0.5)),
+    model3.add(Dense(256, activation='relu'))
+    model3.add(Dense(num_classes, activation='softmax'))
+
+    optm = Adam(learning_rate=lr)
+    model3.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    return model3
+
+
 def train_model(model, x_train, y_train, batch_size, epochs, validation_split):
     hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
     return hist
 
 
-def plot_training_metrics(history):
+def plot_training_metrics(choosen_model, history):
+
+    # directory to save the plots
+    path = os.path.join('results', str(choosen_model))
+    if not os.path.exists(path):
+        os.mkdir(path)
     # plotting the metrics
-    fig = plt.figure()
-    plt.subplot(2, 1, 1)
+    fig = plt.figure(1)
     plt.plot(history.history['acc'])
     plt.plot(history.history['val_acc'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
+    plt.savefig('{}/accuracy-model-{}.png'.format(path, choosen_model), format='png')
 
-    plt.subplot(2, 1, 2)
+    plt.figure(2)
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.title('model loss')
@@ -143,7 +168,7 @@ def plot_training_metrics(history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.show()
+    plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
 
 
 def evaluate_model(model, X_test, Y_test):
@@ -154,41 +179,36 @@ def evaluate_model(model, X_test, Y_test):
     return evaluation_metrics
 
 
-def visualize_correct_and_wrong_predictions(model, X_test, Y_test):
-    # make prediction
-    predicted = model.predict_classes(X_test)
+def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
 
-    # check correct and incorrect predictions on unseen data
-    correct_idx = np.nonzero(predicted == Y_test)[0]
-    wrong_idx = np.nonzero(predicted != Y_test)[0]
+    path = os.path.join('results', str(choosen_model))
+    print(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    predicted_classes = model.predict_classes(X_test)
+    y_reversed = np.argmax(y_test, axis=1)
+    # see which we predicted correctly and which not
+    correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
+    incorrect_indices = np.nonzero(predicted_classes != y_reversed)[0]
+    print()
+    print(correct_indices.shape[0], " classified correctly")
+    print(incorrect_indices.shape[0], " classified incorrectly")
 
-    # one can check how many has been classified correctly
-    # print("{} correctly classifier".format(len(correct_idx)))
-    # print("{} wrongly classifier".format(len(wrong_idx)))
-    plt.rcParams['figure.figsize'] = (7, 14)
+    # adapt figure size to accomodate 18 subplots
 
-    # visualize results
-    check_predicted = plt.figure()
-
-    # draw the correct
-    for i, correct in enumerate(correct_idx[:9]):
+    plt.figure(3)
+    wrong_nine = incorrect_indices[:18]
+    # plot 9 incorrect predictions
+    for i, incorrect in enumerate(wrong_nine):
         plt.subplot(6, 3, i + 1)
-        plt.imshow(X_test[correct].reshape(28, 28), cmap='gray', interpolation='none')
-        plt.title(
-            "Predicted: {}, Truth: {}".format(predicted[correct],
-                                              y_test[correct]))
-        plt.xticks([])
-        plt.yticks([])
-    # draw the wrong images
-    for i, incorrect in enumerate(wrong_idx[:9]):
-        plt.subplot(6, 3, i + 10)
         plt.imshow(X_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
         plt.title(
-            "Predicted {}, Truth: {}".format(wrong_idx[incorrect],
-                                             y_test[incorrect]))
+            "Predicted = {}".format(predicted_classes[incorrect]))
         plt.xticks([])
         plt.yticks([])
-        plt.show()
+
+    plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
+    plt.tight_layout()
 
 
 def save_model(model, model_name):
@@ -203,7 +223,6 @@ def save_model(model, model_name):
 
 
 choose_model = 1
-
 # crate the model
 if choose_model == 1:
     model = Model()
@@ -213,24 +232,23 @@ elif choose_model == 2:
     model = Model2('Adam', lr=0.001)
     model_name = 'mnist-cnn-2'
 
-
 # Hyper parameters
 batch_size = 128
-epochs = 1
+epochs = 20
 validation_split = 0.1
 
 # train model now
 history = train_model(model, x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
 # visualize training statistics
-plot_training_metrics(history)
+plot_training_metrics(choose_model,history)
 
 # evaluate model
-evaluate_model(model, X_test=x_test, Y_test= y_test)
+evaluate_model(model, X_test=x_test, Y_test=y_test)
 
 # visualize correct and wrong predictions
-visualize_correct_and_wrong_predictions(model, X_test=x_test, Y_test= y_test)
-
+visualize_correct_and_wrong_predictions(choose_model, model, X_test=x_test, y_test=y_test)
 
 # save final model
-#save_model(model, model_name)
+save_model(model, model_name)
+plt.show()
