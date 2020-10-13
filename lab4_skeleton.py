@@ -13,7 +13,7 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.optimizers import RMSprop, SGD, Adam
-
+from keras.applications import ResNet50
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -75,6 +75,7 @@ y_test = tensorflow.keras.utils.to_categorical(y_test, num_classes)
 ##### TO COMPLETE
 
 # Define Network
+
 def Model():
     # creating model instance
     model = Sequential()
@@ -112,7 +113,7 @@ def Model2():
     model2.add(Dense(256, activation='relu'))
     model2.add(Dense(num_classes, activation='softmax'))
 
-    optm = Adam(learning_rate=lr)
+    optm = Adam(learning_rate=0.02)
     model2.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model2
@@ -124,13 +125,11 @@ def Model3(optimizer='Adam', lr=0.001, momentum=0.9):
     model3.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
                       input_shape=(28, 28, 1)))
     model3.add(MaxPooling2D(pool_size=(2, 2)))
-    model3.add(Dropout(0.2))
     model3.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform'))
     model3.add(MaxPooling2D(pool_size=(2, 2)))
     model3.add(Flatten())
 
-    model3.add(Dropout(0.5)),
-    model3.add(Dense(256, activation='relu'))
+    model3.add(Dense(100, activation='relu'))
     model3.add(Dense(num_classes, activation='softmax'))
 
     optm = Adam(learning_rate=lr)
@@ -153,8 +152,8 @@ def plot_training_metrics(choosen_model, history):
         os.mkdir(path)
     # plotting the metrics
     fig = plt.figure(1)
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
@@ -223,20 +222,27 @@ def save_model(model, model_name):
     print('Saved trained model at %s ' % model_path)
 
 
-choose_model = 1
+choose_model = 2
 # crate the model
 if choose_model == 1:
     model = Model()
     model_name = 'mnist-cnn-1'
-
 elif choose_model == 2:
-    model = Model2('Adam', lr=0.001)
+    model = Model2()
     model_name = 'mnist-cnn-2'
+elif choose_model == 3:
+    model = Model3('Adam', lr=0.1)
+    model_name = 'mnist-cnn-2'
+
 
 # Hyper parameters
 batch_size = 128
-epochs = 20
-validation_split = 0.1
+epochs = 10
+validation_split = 0.25
+
+
+#Do data Augmentation
+generator=dataAugmentation(x_train,y_train,True)
 
 # train model now
 history = train_model(model, x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
