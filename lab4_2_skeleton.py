@@ -112,8 +112,8 @@ def plot_training_metrics(choosen_model, history):
         os.mkdir(path)
     # plotting the metrics
     fig = plt.figure(1)
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
