@@ -6,6 +6,7 @@ from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.optimizers import RMSprop, SGD, Adam
+from keras.preprocessing.image import ImageDataGenerator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -42,6 +43,41 @@ def processed_data(x_train, x_test):
 
     return x_train, x_test
 
+def dataAugmentation(x_train,x_val,x_test,y_train=None,show_flag=False):
+
+    train_generator = ImageDataGenerator(
+    rotation_range=15,
+    horizontal_flip=True,
+    width_shift_range=0.1,
+    height_shift_range=0.1)
+
+    val_generator = ImageDataGenerator(
+    rotation_range=15,
+    horizontal_flip=True,
+    width_shift_range=0.1,
+    height_shift_range=0.1)
+
+    test_generator = ImageDataGenerator(
+    rotation_range=15,
+    horizontal_flip=True,
+    width_shift_range=0.1,
+    height_shift_range=0.1)
+
+    train_generator.fit(x_train)
+    val_generator.fit(x_val)
+    test_generator.fit(x_test)
+    
+    
+    if show_flag:
+        for x, y in train_generator.flow(x_train, y_train, batch_size=25):
+            for i in range(0, 24):
+                plt.subplot( 5,5, 1 + i)
+                plt.imshow(x[i],cmap=plt.cm.binary)
+            plt.show()
+            break
+    return train_generator,val_generator,test_generator
+
+
 
 def visualize_sample_images(class_names, x_train, y_train):
     plt.figure(figsize=(10, 10))
@@ -66,6 +102,14 @@ def model1():
     # Maxpooling Layers
     model1.add(MaxPooling2D(2, 2))
 
+    model1.add(Dropout(0.25))
+    model1.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
+
+    model1.add(MaxPooling2D(2, 2))
+    model1.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
+
+    model1.add(MaxPooling2D(2, 2))
+
     # Flatten Layers
     model1.add(Flatten())
 
@@ -76,10 +120,27 @@ def model1():
     model1.add(Dense(10, activation='softmax'))
 
     # complile model
-    optm = SGD(lr=0.001, momentum=0.9)
+    optm = SGD(lr=0.01, momentum=0.25)
     model1.compile(optimizer=optm, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     return model1
+
+def Model2():
+
+    model2 = Sequential()
+    model2.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
+                      input_shape=(32, 32, 3)))
+    model2.add(MaxPooling2D(pool_size=(2, 2)))
+    model2.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform'))
+    model2.add(MaxPooling2D(pool_size=(2, 2)))
+    model2.add(Flatten())
+    model2.add(Dense(256, activation='relu'))
+    model2.add(Dense(10, activation='softmax'))
+
+    optm = Adam(learning_rate=0.05)
+    model2.compile(optimizer=optm, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    return model2
 
 
 def Model3():
@@ -93,7 +154,7 @@ def Model3():
     model3.add(Dense(256, activation='relu'))
     model3.add(Dense(10, activation='softmax'))
 
-    optm = Adam(learning_rate=0.01)
+    optm = Adam(learning_rate=0.04)
     model3.compile(optimizer=optm, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     return model3
@@ -112,8 +173,8 @@ def plot_training_metrics(choosen_model, history):
         os.mkdir(path)
     # plotting the metrics
     fig = plt.figure(1)
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
@@ -193,15 +254,17 @@ if __name__ == '__main__':
 
     # visualize sample images
     #visualize_sample_images(class_names, x_train, y_train)
-
-    choose_model = 3
+    #Do data Augmentation
+    generator=dataAugmentation(x_train,x_train,x_test,y_train,True)
+    
+    choose_model = 1
     # crate the model
     if choose_model == 1:
         model = model1()
         model_name = 'cifar-cnn-1'
 
     elif choose_model == 2:
-        # model = Model2('Adam', lr=0.001)
+        model = Model2()
         model_name = 'cifar-cnn-2'
     elif choose_model == 3:
         model = Model3()
@@ -210,7 +273,7 @@ if __name__ == '__main__':
     # train the model
     # Hyper parameters
     batch_size = 128
-    epochs = 3
+    epochs = 20
     validation_split = 0.2
     history = train_model(model, x_train, y_train, batch_size=batch_size, epochs=epochs,
                           validation_split=validation_split)
