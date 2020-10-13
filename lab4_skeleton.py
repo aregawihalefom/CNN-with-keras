@@ -244,6 +244,7 @@ validation_split = 0.25
 #Do data Augmentation
 generator=dataAugmentation(x_train,y_train,True)
 
+
 # train model now
 history = train_model(model, x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
