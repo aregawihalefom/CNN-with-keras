@@ -61,8 +61,6 @@ def load_and_process_data():
 
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
-
-
     # directory to save the plots
     path = os.path.join('results/mnist/')
     if not os.path.exists(path):
@@ -125,7 +123,7 @@ def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test
 # save model
 def save_model(model, model_name):
     # saving the model
-    save_dir = "results/mnist/"+str(model_name)
+    save_dir = "results/mnist/"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     file_name = str(model_name) + '.h5'
@@ -234,12 +232,11 @@ def run_program():
     f = open('accuracy.txt', 'w')
     for batch in batch_size:
         for lr in learnig_rate:
-
             choice = 3  # 1, 2, or 3
             model = select_model(choice, lr)
 
-            save_file_name = "model_"+str(choice) + "_batch_"+str(batch)+"_lr_"+str(lr)
-            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val,y_val))
+            save_file_name = "model_" + str(choice) + "_batch_" + str(batch) + "_lr_" + str(lr)
+            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
 
             # display training details
             plot_training_metrics(save_file_name, hist)
@@ -255,7 +252,10 @@ def run_program():
             print("Test Accuracy", acc)
 
             # save model
-            save_model(model, choice)
+            save_model(model, save_file_name)
+
+            break
+    f.close()
 
 
 if __name__ == "__main__":
