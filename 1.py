@@ -61,8 +61,10 @@ def load_and_process_data():
 
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
+
+
     # directory to save the plots
-    path = os.path.join('results/mnist', str(choosen_model))
+    path = os.path.join('results/mnist/')
     if not os.path.exists(path):
         os.mkdir(path)
     # plotting the metrics
@@ -133,7 +135,7 @@ def save_model(model, model_name):
 
 
 # first baseline model
-def Model1():
+def Model1(lr):
     """
      First baseline model ( simpler one)
     """
@@ -143,14 +145,14 @@ def Model1():
     model.add(Flatten())
     model.add(Dense(100, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dense(10, activation='softmax'))
-    optm = SGD(lr=0.001, momentum=0.9)
+    optm = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
 
 
 # define cnn model
-def Model2():
+def Model2(lr):
     """
     Second model with more convolutional layers and
     without any regularaization
@@ -167,13 +169,13 @@ def Model2():
     model.add(Dense(10, activation='softmax'))
 
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
 
 # third model
-def Model3():
+def Model3(lr):
     """
      This is quite interesting
     """
@@ -194,24 +196,25 @@ def Model3():
     model.add(Dense(10, activation='softmax'))
 
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+
     return model
 
 
 # Selects specific model
-def select_model(choice):
+def select_model(choice, lr):
     """
     Creates model instance according to
     choice
     """
     model = None
     if choice == 1:
-        model = Model1()
+        model = Model1(lr)
     elif choice == 2:
-        model = Model2()
+        model = Model2(lr)
     elif choice == 3:
-        model = Model3()
+        model = Model3(lr)
 
     return model
 
@@ -222,26 +225,37 @@ def run_program():
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
     # define model
-    choice = 3  # 1, 2, or 3
-    model = select_model(choice)
-    model.summary()
 
     # train model
     # Hyperparameters
-    batch_size = 128
     epochs = 1
-    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val,y_val))
+    batch_size = [64, 128]
+    learnig_rate = [0.001, 0.01]
+    f = open('accuracy.txt', 'w')
+    for batch in batch_size:
+        for lr in learnig_rate:
 
-    # display training details
-    plot_training_metrics(choice, hist)
+            choice = 3  # 1, 2, or 3
+            model = select_model(choice, lr)
 
-    # evaluate model
-    loss, acc = model.evaluate(x_test, y_test, verbose=2)
-    print("Test Loss: ", loss)
-    print("Test Accuracy", acc)
+            save_file_name = "model_"+str(choice) + "_batch_"+str(batch)+"_lr_"+str(lr)
+            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val,y_val))
 
-    # save model
-    save_model(model, choice)
+            # display training details
+            plot_training_metrics(save_file_name, hist)
+
+            # evaluate model
+            loss, acc = model.evaluate(x_test, y_test, verbose=2)
+
+            f.write("Accuracy config : " + save_file_name + " = ")
+            f.write(str(acc * 100))
+            f.write("\n")
+
+            print("Test Loss: ", loss)
+            print("Test Accuracy", acc)
+
+            # save model
+            save_model(model, choice)
 
 
 if __name__ == "__main__":
