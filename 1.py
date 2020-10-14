@@ -229,8 +229,8 @@ def run_program():
     # train model
     # Hyperparameters
     epochs = 1
-    batch_size = [64, 128]
-    learnig_rate = [0.001, 0.01]
+    batch_size = [32,64, 128]
+    learnig_rate = [0.001, 0.01,0.1]
     f = open('accuracy.txt', 'w')
     for batch in batch_size:
         for lr in learnig_rate:
