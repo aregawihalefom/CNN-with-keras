@@ -15,16 +15,27 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.optimizers import RMSprop, SGD, Adam
-
+from mlxtend.plotting import plot_confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-
+from sklearn.metrics import confusion_matrix
+from mlxtend.plotting import plot_confusion_matrix
 
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
 
+
+
+def generate_confusion_matrix(true_labels,predictedLabels,name):
+    path = os.path.join('results/mnist/confusionMatrix_ex_1')
+    if not os.path.exists(path):
+        os.mkdir(path)
+    cf=confusion_matrix(true_labels,predictedLabels)
+    fig, ax = plot_confusion_matrix(conf_mat=cf,show_absolute=True,show_normed=True,colorbar=True)
+    plt.show()
+    plt.savefig('{}/confusionMatrix-{}.png'.format(path, name), format='png')
 
 # load and prepocess data
 def load_and_process_data():
@@ -77,6 +88,7 @@ def plot_training_metrics(choosen_model, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
     plt.savefig('{}/accuracy-model-{}.png'.format(path, choosen_model), format='png')
+    plt.clf()
 
     plt.figure(2)
     plt.plot(history.history['loss'])
@@ -87,10 +99,10 @@ def plot_training_metrics(choosen_model, history):
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
     plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
-
+    plt.clf()
 
 # visualize  wrong predictions
-def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
+def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test,name):
 
     path = os.path.join('results', str(choosen_model))
     print(path)
@@ -100,8 +112,11 @@ def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test
     # predicted classes
     predicted_classes = model.predict_classes(X_test)
 
+   
     # reverse the true level from one hot encoding back  to normal ture lavel
     y_reversed = np.argmax(y_test, axis=1)
+    #generate confusion Matrix
+    generate_confusion_matrix(y_reversed,predicted_classes,name)
 
     # see which we predicted correctly and which not
     correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
@@ -113,20 +128,20 @@ def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test
 
     # adapt figure size to accomodate 18 subplots
 
-    plt.figure(3)
-    wrong_nine = incorrect_indices[:18]
+    plt.figure(figsize=(6,6))
+    wrong_nine = incorrect_indices[:9]
     # plot 9 incorrect predictions
     for i, incorrect in enumerate(wrong_nine):
-        plt.subplot(6, 3, i + 1)
+        plt.subplot(3, 3, i + 1)
         plt.imshow(X_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
         plt.title(
-            "Predicted = {}".format(predicted_classes[incorrect]))
+            "True = {} \n Predicted = {}".format(y_reversed[incorrect], predicted_classes[incorrect]))
         plt.xticks([])
         plt.yticks([])
-
+    
+    plt.tight_layout(pad=1)
     plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
-    plt.tight_layout()
-
+    plt.clf()
 
 # save model
 
@@ -236,9 +251,9 @@ def run_program():
 
     # train model
     # Hyperparameters
-    epochs =50
-    batch_size = [32,64, 128]
-    learnig_rate = [0.001, 0.01,0.1]
+    epochs =1
+    batch_size = [32]
+    learnig_rate = [0.001]
     f = open('accuracy.txt', 'w')
     for batch in batch_size:
         for lr in learnig_rate:
@@ -253,6 +268,9 @@ def run_program():
 
             # evaluate model
             loss, acc = model.evaluate(x_test, y_test, verbose=2)
+
+            #wrong classifications
+            visualize_correct_and_wrong_predictions(choice , model, x_test, y_test,save_file_name)
 
             f.write("Accuracy config : " + save_file_name + " = ")
             f.write(str(acc * 100))
