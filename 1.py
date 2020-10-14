@@ -18,6 +18,9 @@ from tensorflow.keras.optimizers import RMSprop, SGD, Adam
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
+
 
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
@@ -226,7 +229,7 @@ def run_program():
 
     # train model
     # Hyperparameters
-    epochs = 1
+    epochs =50
     batch_size = [32,64, 128]
     learnig_rate = [0.001, 0.01,0.1]
     f = open('accuracy.txt', 'w')
@@ -253,8 +256,6 @@ def run_program():
 
             # save model
             save_model(model, save_file_name)
-
-            break
     f.close()
 
 
