@@ -33,8 +33,8 @@ def load_and_process_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
     # one hot encode target values
-    y_train =  tensorflow.keras.utils.to_categorical(y_train, num_classes)
-    y_test =  tensorflow.keras.utils.to_categorical(y_test,  num_classes)
+    y_train = tensorflow.keras.utils.to_categorical(y_train, num_classes)
+    y_test = tensorflow.keras.utils.to_categorical(y_test, num_classes)
 
     # reshape data
     img_rows, img_cols = x_train.shape[1], x_train.shape[2]
@@ -54,11 +54,11 @@ def load_and_process_data():
 
     return x_train, y_train, x_test, y_test
 
+
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
-
     # directory to save the plots
-    path = os.path.join('results', str(choosen_model))
+    path = os.path.join('results/mnist', str(choosen_model))
     if not os.path.exists(path):
         os.mkdir(path)
     # plotting the metrics
@@ -81,8 +81,55 @@ def plot_training_metrics(choosen_model, history):
     plt.tight_layout()
     plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
 
+
+# visualize  wrong predictions
+def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
+    path = os.path.join('results', str(choosen_model))
+    print(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    predicted_classes = model.predict_classes(X_test)
+    y_reversed = np.argmax(y_test, axis=1)
+    # see which we predicted correctly and which not
+    correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
+    incorrect_indices = np.nonzero(predicted_classes != y_reversed)[0]
+    print()
+    print(correct_indices.shape[0], " classified correctly")
+    print(incorrect_indices.shape[0], " classified incorrectly")
+
+    # adapt figure size to accomodate 18 subplots
+
+    plt.figure(3)
+    wrong_nine = incorrect_indices[:18]
+    # plot 9 incorrect predictions
+    for i, incorrect in enumerate(wrong_nine):
+        plt.subplot(6, 3, i + 1)
+        plt.imshow(X_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
+        plt.title(
+            "Predicted = {}".format(predicted_classes[incorrect]))
+        plt.xticks([])
+        plt.yticks([])
+
+    plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
+    plt.tight_layout()
+
+
+# save model
+
+# save model
+def save_model(model, model_name):
+    # saving the model
+    save_dir = "results/mnist/"+str(model_name)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    file_name = str(model_name) + '.h5'
+    model_path = os.path.join(save_dir, file_name)
+    model.save(model_path)
+    print('Saved trained model at %s ' % model_path)
+
+
 # first baseline model
-def Model():
+def Model1():
     """
      First baseline model ( simpler one)
     """
@@ -96,6 +143,7 @@ def Model():
     model.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
+
 
 # define cnn model
 def Model2():
@@ -119,13 +167,14 @@ def Model2():
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
+
+# third model
 def Model3():
     """
      This is quite interesting
     """
-
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform',input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(28, 28, 1)))
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
@@ -134,18 +183,67 @@ def Model3():
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
-    
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
+
     model.add(Flatten())
     model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dropout(0.2))
     model.add(Dense(10, activation='softmax'))
-    
+
     # compile model
     opt = SGD(lr=0.001, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
+
+# Selects specific model
+def select_model(choice):
+    """
+    Creates model instance according to
+    choice
+    """
+    model = None
+    if choice == 1:
+        model = Model1()
+    elif choice == 2:
+        model = Model2()
+    elif choice == 3:
+        model = Model3()
+
+    return model
+
+
+# Function to Run the model
+def run_program():
+    # load the dataset
+    x_train, y_train, x_test, y_test = load_and_process_data()
+
+    # define model
+    choice = 3  # 1, 2, or 3
+    model = select_model(choice)
+    model.summary()
+
+    # train model
+    # Hyperparameters
+    batch_size = 128
+    epochs = 1
+    validation_split = 0.2
+    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
+
+    # display training details
+    plot_training_metrics(choice, hist)
+
+    # evaluate model
+    loss, acc = model.evaluate(x_test, y_test, verbose=2)
+    print("Test Loss: ", loss)
+    print("Test Accuracy", acc)
+
+    # save model
+    save_model(model, choice)
+
+
+if __name__ == "__main__":
+    # ran everthing from here
+    run_program()
+
+    # show plots
+    plt.show()
