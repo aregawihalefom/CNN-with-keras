@@ -91,15 +91,22 @@ def plot_training_metrics(choosen_model, history):
 
 # visualize  wrong predictions
 def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
+
     path = os.path.join('results', str(choosen_model))
     print(path)
     if not os.path.exists(path):
         os.mkdir(path)
+
+    # predicted classes
     predicted_classes = model.predict_classes(X_test)
+
+    # reverse the true level from one hot encoding back  to normal ture lavel
     y_reversed = np.argmax(y_test, axis=1)
+
     # see which we predicted correctly and which not
     correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
     incorrect_indices = np.nonzero(predicted_classes != y_reversed)[0]
+
     print()
     print(correct_indices.shape[0], " classified correctly")
     print(incorrect_indices.shape[0], " classified incorrectly")

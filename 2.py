@@ -89,7 +89,7 @@ def plot_training_metrics(choice, history):
 
 
 # First baseline model
-def Model1():
+def Model1(lr):
     """
      First baseline model ( simpler one)
     """
@@ -107,7 +107,7 @@ def Model1():
 
 
 # Second model
-def Model2():
+def Model2(lr):
     """
     Second model with more convolutional layers and
     without any regularaization
@@ -132,7 +132,7 @@ def Model2():
 
 
 # Third model
-def Model3():
+def Model3(lr):
     """
      This is quite interesting
     """
@@ -161,7 +161,7 @@ def Model3():
 # save model
 def save_model(model, model_name):
     # saving the model
-    save_dir = "results/cifar10/"+str(model_name)
+    save_dir = "results/cifar10/"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     file_name = str(model_name) + '.h5'
@@ -171,18 +171,18 @@ def save_model(model, model_name):
 
 
 # Selects specific model
-def select_model(choice):
+def select_model(choice, lr):
     """
     Creates model instance according to
     choice
     """
     model = None
     if choice == 1:
-        model = Model1()
+        model = Model1(lr)
     elif choice == 2:
-        model = Model2()
+        model = Model2(lr)
     elif choice == 3:
-        model = Model3()
+        model = Model3(lr)
 
     return model
 
@@ -193,6 +193,7 @@ def run_program():
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
     # define model
+<<<<<<< HEAD
 <<<<<<< HEAD
     choice = 2 # 1, 2, or 3
 =======
@@ -212,17 +213,40 @@ def run_program():
     epochs = 20
     hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
 >>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
+=======
 
-    # display training details
-    plot_training_metrics(choice, hist)
+    # train model
+    # Hyperparameters
+    epochs = 1
+    batch_size = [64, 128]
+    learnig_rate = [0.001, 0.01]
+    f = open('accuracy2.txt', 'w')
+    for batch in batch_size:
+        for lr in learnig_rate:
+            choice = 3  # 1, 2, or 3
+            model = select_model(choice, lr)
+>>>>>>> ff2d09a73b3fbb4f848353580f56d889b7de5e44
 
-    # evaluate model
-    loss, acc = model.evaluate(x_test, y_test, verbose=2)
-    print("Test Loss: ", loss)
-    print("Test Accuracy", acc)
+            save_file_name = "model_" + str(choice) + "_batch_" + str(batch) + "_lr_" + str(lr)
+            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
 
-    # save model
-    save_model(model, choice)
+            # display training details
+            plot_training_metrics(save_file_name, hist)
+
+            # evaluate model
+            loss, acc = model.evaluate(x_test, y_test, verbose=2)
+
+            f.write("Accuracy config : " + save_file_name + " = ")
+            f.write(str(acc * 100))
+            f.write("\n")
+
+            print("Test Loss: ", loss)
+            print("Test Accuracy", acc)
+
+            # save model
+            save_model(model, save_file_name)
+
+    f.close()
 
 
 if __name__ == "__main__":
