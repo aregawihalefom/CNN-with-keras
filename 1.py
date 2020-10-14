@@ -3,6 +3,8 @@ from __future__ import print_function
 # The two folloing lines allow to reduce tensorflow verbosity
 import os
 
+from sklearn.model_selection import train_test_split
+
 os.environ[
     'TF_CPP_MIN_LOG_LEVEL'] = '1'  # '0' for DEBUG=all [default], '1' to filter INFO msgs, '2' to filter WARNING
 # msgs, '3' to filter all msgs
@@ -52,7 +54,9 @@ def load_and_process_data():
     print('x_train.shape=', x_train.shape)
     print('x_test.shape=', x_test.shape)
 
-    return x_train, y_train, x_test, y_test
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, train_size=0.8)
+
+    return x_train, y_train, x_test, y_test, x_val, y_val
 
 
 # draw the training statistics
@@ -215,7 +219,7 @@ def select_model(choice):
 # Function to Run the model
 def run_program():
     # load the dataset
-    x_train, y_train, x_test, y_test = load_and_process_data()
+    x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
     # define model
     choice = 3  # 1, 2, or 3
@@ -226,8 +230,7 @@ def run_program():
     # Hyperparameters
     batch_size = 128
     epochs = 1
-    validation_split = 0.2
-    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
+    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val,y_val))
 
     # display training details
     plot_training_metrics(choice, hist)

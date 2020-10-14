@@ -3,6 +3,9 @@ from __future__ import print_function
 # The two folloing lines allow to reduce tensorflow verbosity
 import os
 
+from sklearn.model_selection import train_test_split
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+
 os.environ[
     'TF_CPP_MIN_LOG_LEVEL'] = '1'  # '0' for DEBUG=all [default], '1' to filter INFO msgs, '2' to filter WARNING
 # msgs, '3' to filter all msgs
@@ -11,10 +14,12 @@ import tensorflow as tf
 import tensorflow.keras
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
-from tensorflow.keras.optimizers import RMSprop, SGD, Adam
-from sklearn.model_selection import train_test_split
+from tensorflow.python.keras.layers import BatchNormalization, GlobalAveragePooling2D
 
+from tensorflow.keras.optimizers import RMSprop, SGD, Adam
+from tensorflow.keras.applications import vgg16
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -57,6 +62,37 @@ def load_and_process_data():
     return x_train, y_train, x_test, y_test, x_val, y_val
 
 
+# def data agumentation
+def augment_data(x_train, y_train, x_val, y_val, batch_size=64):
+    train_datagen = ImageDataGenerator(
+        rescale=1. / 255,
+        rotation_range=40,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True,
+        fill_mode='nearest')
+
+    val_datagen = ImageDataGenerator(
+        rescale=1. / 255,
+        rotation_range=40,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True,
+        fill_mode='nearest')
+
+    train_datagen.fit(x_train)
+    train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
+
+    val_datagen.fit(x_val)
+    val_generator = val_datagen.flow(x_val, y_val, batch_size=batch_size)
+
+    return train_generator, val_generator
+
+
 # draw the training statistics
 def plot_training_metrics(choice, history):
     # directory to save the plots
@@ -84,80 +120,10 @@ def plot_training_metrics(choice, history):
     plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
 
 
-# First baseline model
-def Model1():
-    """
-     First baseline model ( simpler one)
-    """
-    model = Sequential()
-    model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
-                     input_shape=(32, 32, 3)))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Flatten())
-    model.add(Dense(100, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dense(10, activation='softmax'))
-    optm = SGD(lr=0.001, momentum=0.9)
-    model.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
-
-    return model
-
-
-# Second model
-def Model2():
-    """
-    Second model with more convolutional layers and
-    without any regularaization
-    """
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dense(10, activation='softmax'))
-
-    # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
-    return model
-
-
-# Third model
-def Model3():
-    """
-     This is quite interesting
-    """
-
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
-
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dropout(0.2))
-    model.add(Dense(10, activation='softmax'))
-
-    # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
-    model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
-    return model
-
-
 # save model
 def save_model(model, model_name):
     # saving the model
-    save_dir = "results/cifar10/"+str(model_name)
+    save_dir = "results/cifar10/" + str(model_name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     file_name = str(model_name) + '.h5'
@@ -166,19 +132,29 @@ def save_model(model, model_name):
     print('Saved trained model at %s ' % model_path)
 
 
-# Selects specific model
-def select_model(choice):
-    """
-    Creates model instance according to
-    choice
-    """
-    model = None
-    if choice == 1:
-        model = Model1()
-    elif choice == 2:
-        model = Model2()
-    elif choice == 3:
-        model = Model3()
+def model(lr):
+    # get VGG16
+    base_model = vgg16.VGG16(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+
+    # freez Layers
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    # build New Network
+    model = Sequential()
+    model.add(base_model)
+    model.add(GlobalAveragePooling2D())
+    model.add(BatchNormalization())
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(256, activation='relu'))
+    model.add(Dropout(0.6))
+    model.add(Dense(10, activation='softmax'))
+
+    # set optimizer
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=Adam(lr),
+                  metrics=['accuracy'])
 
     return model
 
@@ -186,18 +162,19 @@ def select_model(choice):
 # Function to Run the model
 def run_program():
     # load the dataset
-    x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
+    x_train, y_train, x_test, y_test = load_and_process_data()
 
     # define model
-    choice = 3 # 1, 2, or 3
-    model = select_model(choice)
+    choice = 2  # 1, 2, or 3
+    model = model()
     model.summary()
 
     # train model
     # Hyperparameters
     batch_size = 128
-    epochs = 20
-    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
+    epochs = 1
+    validation_split = 0.2
+    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
     # display training details
     plot_training_metrics(choice, hist)
@@ -213,7 +190,20 @@ def run_program():
 
 if __name__ == "__main__":
     # ran everthing from here
-    run_program()
+    # run_program()
+    model = model(0.001)
+    model.summary()
 
+    # get data
+    x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
+
+    # agument data
+    train_augmented, val_agumented = augment_data(x_train, y_train, x_val, y_val)
+
+    # train model
+    history = model.fit_generator(train_augmented,
+                                  validation_data=val_agumented,
+                                  epochs=3,
+                                  verbose=1)
     # show plots
     plt.show()
