@@ -57,7 +57,7 @@ def load_and_process_data():
 # draw the training statistics
 def plot_training_metrics(choice, history):
     # directory to save the plots
-    path = os.path.join('results', str(choosen_model))
+    path = os.path.join('results', str(choice))
     if not os.path.exists(path):
         os.mkdir(path)
     # plotting the metrics
@@ -68,7 +68,7 @@ def plot_training_metrics(choice, history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
-    plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choosen_model), format='png')
+    plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choice), format='png')
 
     plt.figure(2)
     plt.plot(history.history['loss'])
@@ -78,7 +78,7 @@ def plot_training_metrics(choice, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choosen_model), format='png')
+    plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
 
 
 # First baseline model
@@ -186,14 +186,14 @@ def run_program():
     x_train, y_train, x_test, y_test = load_and_process_data()
 
     # define model
-    choice = 1 # 1, 2, or 3
+    choice = 2 # 1, 2, or 3
     model = select_model(choice)
     model.summary()
 
     # train model
     # Hyperparameters
     batch_size = 128
-    epochs = 3
+    epochs = 60
     validation_split = 0.2
     hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
