@@ -3,6 +3,8 @@ from __future__ import print_function
 # The two folloing lines allow to reduce tensorflow verbosity
 import os
 
+from sklearn.model_selection import train_test_split
+
 os.environ[
     'TF_CPP_MIN_LOG_LEVEL'] = '1'  # '0' for DEBUG=all [default], '1' to filter INFO msgs, '2' to filter WARNING
 # msgs, '3' to filter all msgs
@@ -33,8 +35,8 @@ def load_and_process_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
     # one hot encode target values
-    y_train =  tensorflow.keras.utils.to_categorical(y_train, num_classes)
-    y_test =  tensorflow.keras.utils.to_categorical(y_test,  num_classes)
+    y_train = tensorflow.keras.utils.to_categorical(y_train, num_classes)
+    y_test = tensorflow.keras.utils.to_categorical(y_test, num_classes)
 
     # reshape data
     img_rows, img_cols = x_train.shape[1], x_train.shape[2]
@@ -52,13 +54,17 @@ def load_and_process_data():
     print('x_train.shape=', x_train.shape)
     print('x_test.shape=', x_test.shape)
 
-    return x_train, y_train, x_test, y_test
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, train_size=0.8)
+
+    return x_train, y_train, x_test, y_test, x_val, y_val
+
 
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
 
+
     # directory to save the plots
-    path = os.path.join('results', str(choosen_model))
+    path = os.path.join('results/mnist/')
     if not os.path.exists(path):
         os.mkdir(path)
     # plotting the metrics
@@ -81,8 +87,55 @@ def plot_training_metrics(choosen_model, history):
     plt.tight_layout()
     plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
 
+
+# visualize  wrong predictions
+def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
+    path = os.path.join('results', str(choosen_model))
+    print(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    predicted_classes = model.predict_classes(X_test)
+    y_reversed = np.argmax(y_test, axis=1)
+    # see which we predicted correctly and which not
+    correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
+    incorrect_indices = np.nonzero(predicted_classes != y_reversed)[0]
+    print()
+    print(correct_indices.shape[0], " classified correctly")
+    print(incorrect_indices.shape[0], " classified incorrectly")
+
+    # adapt figure size to accomodate 18 subplots
+
+    plt.figure(3)
+    wrong_nine = incorrect_indices[:18]
+    # plot 9 incorrect predictions
+    for i, incorrect in enumerate(wrong_nine):
+        plt.subplot(6, 3, i + 1)
+        plt.imshow(X_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
+        plt.title(
+            "Predicted = {}".format(predicted_classes[incorrect]))
+        plt.xticks([])
+        plt.yticks([])
+
+    plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
+    plt.tight_layout()
+
+
+# save model
+
+# save model
+def save_model(model, model_name):
+    # saving the model
+    save_dir = "results/mnist/"+str(model_name)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    file_name = str(model_name) + '.h5'
+    model_path = os.path.join(save_dir, file_name)
+    model.save(model_path)
+    print('Saved trained model at %s ' % model_path)
+
+
 # first baseline model
-def Model():
+def Model1(lr):
     """
      First baseline model ( simpler one)
     """
@@ -92,13 +145,14 @@ def Model():
     model.add(Flatten())
     model.add(Dense(100, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dense(10, activation='softmax'))
-    optm = SGD(lr=0.001, momentum=0.9)
+    optm = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=optm, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
 
+
 # define cnn model
-def Model2():
+def Model2(lr):
     """
     Second model with more convolutional layers and
     without any regularaization
@@ -115,17 +169,18 @@ def Model2():
     model.add(Dense(10, activation='softmax'))
 
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
-def Model3():
+
+# third model
+def Model3(lr):
     """
      This is quite interesting
     """
-
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform',input_shape=(28, 28, 1)))
+    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(28, 28, 1)))
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
@@ -134,18 +189,78 @@ def Model3():
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
-    
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
+
     model.add(Flatten())
     model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dropout(0.2))
     model.add(Dense(10, activation='softmax'))
-    
+
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+
     return model
 
+
+# Selects specific model
+def select_model(choice, lr):
+    """
+    Creates model instance according to
+    choice
+    """
+    model = None
+    if choice == 1:
+        model = Model1(lr)
+    elif choice == 2:
+        model = Model2(lr)
+    elif choice == 3:
+        model = Model3(lr)
+
+    return model
+
+
+# Function to Run the model
+def run_program():
+    # load the dataset
+    x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
+
+    # define model
+
+    # train model
+    # Hyperparameters
+    epochs = 1
+    batch_size = [64, 128]
+    learnig_rate = [0.001, 0.01]
+    f = open('accuracy.txt', 'w')
+    for batch in batch_size:
+        for lr in learnig_rate:
+
+            choice = 3  # 1, 2, or 3
+            model = select_model(choice, lr)
+
+            save_file_name = "model_"+str(choice) + "_batch_"+str(batch)+"_lr_"+str(lr)
+            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val,y_val))
+
+            # display training details
+            plot_training_metrics(save_file_name, hist)
+
+            # evaluate model
+            loss, acc = model.evaluate(x_test, y_test, verbose=2)
+
+            f.write("Accuracy config : " + save_file_name + " = ")
+            f.write(str(acc * 100))
+            f.write("\n")
+
+            print("Test Loss: ", loss)
+            print("Test Accuracy", acc)
+
+            # save model
+            save_model(model, choice)
+
+
+if __name__ == "__main__":
+    # ran everthing from here
+    run_program()
+
+    # show plots
+    plt.show()

@@ -13,6 +13,8 @@ from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.optimizers import RMSprop, SGD, Adam
+from sklearn.model_selection import train_test_split
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -50,16 +52,21 @@ def load_and_process_data():
     # Normalize inputs from [0; 255] to [0; 1]
     x_train = x_train / 255
     x_test = x_test / 255
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, train_size=0.8)
 
-    return x_train, y_train, x_test, y_test
+    return x_train, y_train, x_test, y_test, x_val, y_val
 
 
 # draw the training statistics
 def plot_training_metrics(choice, history):
     # directory to save the plots
+<<<<<<< HEAD
     path = os.path.join('results', str(choice))
+=======
+    path = os.path.join('results/cifar10', str(choice))
+>>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
     # plotting the metrics
     fig = plt.figure(1)
     plt.plot(history.history['accuracy'])
@@ -87,7 +94,8 @@ def Model1():
      First baseline model ( simpler one)
     """
     model = Sequential()
-    model.add(Conv2D(filters = 32, kernel_size = (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
+    model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
+                     input_shape=(32, 32, 3)))
     model.add(MaxPooling2D(2, 2))
     model.add(Flatten())
     model.add(Dense(100, activation='relu', kernel_initializer='he_uniform'))
@@ -108,9 +116,11 @@ def Model2():
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
+
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
+
     model.add(Flatten())
     model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dense(10, activation='softmax'))
@@ -131,17 +141,12 @@ def Model3():
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
 
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
 
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
     model.add(Flatten())
     model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
     model.add(Dropout(0.2))
@@ -152,16 +157,18 @@ def Model3():
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
+
 # save model
 def save_model(model, model_name):
     # saving the model
-    save_dir = "results/"
+    save_dir = "results/cifar10/"+str(model_name)
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
-    model_name = model_name + '.h5'
-    model_path = os.path.join(save_dir, model_name)
+        os.makedirs(save_dir)
+    file_name = str(model_name) + '.h5'
+    model_path = os.path.join(save_dir, file_name)
     model.save(model_path)
     print('Saved trained model at %s ' % model_path)
+
 
 # Selects specific model
 def select_model(choice):
@@ -179,30 +186,39 @@ def select_model(choice):
 
     return model
 
+
 # Function to Run the model
 def run_program():
-
     # load the dataset
-    x_train, y_train, x_test, y_test = load_and_process_data()
+    x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
     # define model
+<<<<<<< HEAD
     choice = 2 # 1, 2, or 3
+=======
+    choice = 3 # 1, 2, or 3
+>>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
     model = select_model(choice)
     model.summary()
 
     # train model
     # Hyperparameters
     batch_size = 128
+<<<<<<< HEAD
     epochs = 60
     validation_split = 0.2
     hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
+=======
+    epochs = 20
+    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
+>>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
 
     # display training details
     plot_training_metrics(choice, hist)
 
     # evaluate model
     loss, acc = model.evaluate(x_test, y_test, verbose=2)
-    print("Test Loss: ",loss)
+    print("Test Loss: ", loss)
     print("Test Accuracy", acc)
 
     # save model
@@ -213,6 +229,5 @@ if __name__ == "__main__":
     # ran everthing from here
     run_program()
 
-
-
-
+    # show plots
+    plt.show()
