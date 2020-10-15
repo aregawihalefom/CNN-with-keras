@@ -156,7 +156,6 @@ def save_model(model, model_name):
     """
     # saving the model
     save_dir = "results/cifar10/" + str(model_name)
-
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     file_name = str(model_name) + '.h5'
@@ -223,7 +222,6 @@ def Model3(lr):
      Architecture : conv -> conv -> max-pooling -> conv -> conv -> max-pooling ->dropout-> flatten -> dense -> dropout->dense
 
     """
-
     model = Sequential()
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(32, 32, 3)))
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform'))
@@ -277,7 +275,7 @@ def run_program():
     #####################################3
     # Hyperparameters
     batch_size = 128
-    epochs = 50
+    epochs = 2
     lr = 0.01
     ######################################
 
@@ -296,10 +294,13 @@ def run_program():
     print("Test Loss: ", loss)
     print("Test Accuracy", acc)
 
-    # 6. save model
+    #6. show wrongly classified
+    visualize_correct_and_wrong_predictions(choice, model, x_test, y_test)
+
+    # 7.. save model
     #save_model(model, choice)
 
-    #7. show plots if any
+    #8. show plots if any
     plt.show()
 
 
