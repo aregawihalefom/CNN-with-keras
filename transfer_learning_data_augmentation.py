@@ -24,6 +24,7 @@ from tensorflow.keras.applications import vgg16
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
 
@@ -31,7 +32,7 @@ print('keras:', tensorflow.keras.__version__)
 # load and prepocess data
 def load_and_process_data():
     """
-    This model loads the MNIST dataset from the keras api
+    This model loads the CIFAR 10 dataset from the keras api
 
     """
     num_classes = 10
@@ -63,26 +64,17 @@ def load_and_process_data():
 
 
 # def data agumentation
-def augment_data(x_train, y_train, x_val, y_val, batch_size=64):
+def augment_data(x_train, y_train, x_val, y_val, batch_size=128):
     train_datagen = ImageDataGenerator(
         rescale=1. / 255,
-        rotation_range=40,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True,
-        fill_mode='nearest')
+        rotation_range=15,
+        horizontal_flip=True
+     )
 
     val_datagen = ImageDataGenerator(
         rescale=1. / 255,
-        rotation_range=40,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True,
-        fill_mode='nearest')
+        rotation_range=15,
+        horizontal_flip=True)
 
     train_datagen.fit(x_train)
     train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
@@ -107,7 +99,8 @@ def plot_training_metrics(choice, history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
-    plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choice), format='png')
+    #plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choice), format='png')
+    plt.show()
 
     plt.figure(2)
     plt.plot(history.history['loss'])
@@ -117,8 +110,8 @@ def plot_training_metrics(choice, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
-
+    #plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
+    plt.show()
 
 # save model
 def save_model(model, model_name):
@@ -132,13 +125,14 @@ def save_model(model, model_name):
     print('Saved trained model at %s ' % model_path)
 
 
-def model(lr):
+def Network(lr,retrain_vgg=False):
     # get VGG16
     base_model = vgg16.VGG16(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
-    # freez Layers
-    for layer in base_model.layers:
-        layer.trainable = False
+    if (retrain_vgg==False):
+        for layer in base_model.layers:
+            layer.trainable = False
+
 
     # build New Network
     model = Sequential()
@@ -148,7 +142,7 @@ def model(lr):
     model.add(Flatten())
     model.add(Dense(256, activation='relu'))
     model.add(Dense(256, activation='relu'))
-    model.add(Dropout(0.6))
+    model.add(Dropout(0.4))
     model.add(Dense(10, activation='softmax'))
 
     # set optimizer
@@ -163,23 +157,38 @@ def model(lr):
 
 def run_program():
 
-    choice = 1
-    model1 = model(0.001)
-    epochs = 30
-    model1.summary()
 
+    ####################### Hyper-parameters##################################
+    
+    choice = 1
+    retrain_vgg=False
+    epochs = 5
+    batch=128
+    data_augment=False
+    learning_rate=0.0001
+    ########################################################################
+    
+    #Define the model
+    model = Network(learning_rate,retrain_vgg=retrain_vgg)
+
+    # Get the model summary
+    model.summary()
+    
     # get data
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
-    # agument data
-    train_augmented, val_agumented = augment_data(x_train, y_train, x_val, y_val)
+    # agument data & train the model
+    if (data_augment==True): 
+        train_augmented, val_agumented = augment_data(x_train, y_train, x_val, y_val)
+        hist = model.fit_generator(train_augmented,
+                        validation_data=val_agumented,
+                        epochs=epochs,
+                        verbose=1)
+    else:
+        # train model
+        hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
 
-    # train model
-    hist = model1.fit_generator(train_augmented,
-                                  validation_data=val_agumented,
-                                  epochs=epochs,
-                                  verbose=1)
-    # show plots
+
 
     # display training details
     plot_training_metrics(choice, hist)
@@ -189,10 +198,8 @@ def run_program():
     print("Test Loss: ", loss)
     print("Test Accuracy", acc)
 
-    # save model
-    save_model(model1, choice)
-
-    plt.show()
+    #save model
+    #save_model(model, choice)
 
 
 if __name__ == "__main__":

@@ -20,10 +20,28 @@ from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mlxtend.plotting import plot_confusion_matrix
+
+
 
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
 
+
+
+def generate_confusion_matrix(true_labels,predictedLabels,name):
+    '''This method generates confusion matrix'''
+
+    labels=[0,1,2,3,4,5,6,7,8,9]
+    
+    #create confusion matrix 
+    cf=confusion_matrix(true_labels,predictedLabels)
+    
+    #plot the confusion matrix
+    fig, ax = plot_confusion_matrix(conf_mat=cf,show_absolute=True,show_normed=True,colorbar=True,class_names=labels)
+    
+    plt.show()
+    #plt.savefig('{}/confusionMatrix-{}.png'.format(path,name), format='png')
 
 # load and prepocess data
 def load_and_process_data():
@@ -64,9 +82,7 @@ def load_and_process_data():
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
     # directory to save the plots
-    path = os.path.join('results/mnist/')
-    if not os.path.exists(path):
-        os.mkdir(path)
+    
     # plotting the metrics
     fig = plt.figure(1)
     plt.plot(history.history['accuracy'])
@@ -75,7 +91,7 @@ def plot_training_metrics(choosen_model, history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
-    plt.savefig('{}/accuracy-model-{}.png'.format(path, choosen_model), format='png')
+    plt.show()
 
     plt.figure(2)
     plt.plot(history.history['loss'])
@@ -85,22 +101,20 @@ def plot_training_metrics(choosen_model, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
-
+    plt.show()
 
 # visualize  wrong predictions
-def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test):
+def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test,name):
 
-    path = os.path.join('results', str(choosen_model))
-    print(path)
-    if not os.path.exists(path):
-        os.mkdir(path)
-
+    
     # predicted classes
     predicted_classes = model.predict_classes(X_test)
 
     # reverse the true level from one hot encoding back  to normal ture lavel
     y_reversed = np.argmax(y_test, axis=1)
+
+    #generate confusion Matrix
+    generate_confusion_matrix(y_reversed,predicted_classes,name)
 
     # see which we predicted correctly and which not
     correct_indices = np.nonzero(predicted_classes == y_reversed)[0]
@@ -122,10 +136,10 @@ def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test
             "Predicted = {}".format(predicted_classes[incorrect]))
         plt.xticks([])
         plt.yticks([])
-
-    plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
-    plt.tight_layout()
-
+    
+    plt.tight_layout(pad=1)
+    #plt.savefig('{}/wrongly-classified-model-{}.png'.format(path, choosen_model), format='png')
+    plt.show()
 
 # save model
 
@@ -184,7 +198,7 @@ def Model2(lr):
 # third model
 def Model3(lr):
     """
-     This is quite interesting
+     Third Model
     """
     model = Sequential()
     model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(28, 28, 1)))
@@ -231,39 +245,48 @@ def run_program():
     # load the dataset
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
-    # define model
+    
 
     # train model
-    # Hyperparameters
-    epochs = 1
-    batch_size = [64, 128]
-    learnig_rate = [0.001, 0.01]
-    f = open('accuracy.txt', 'w')
-    for batch in batch_size:
-        for lr in learnig_rate:
-            choice = 3  # 1, 2, or 3
-            model = select_model(choice, lr)
+    ############################################# Hyperparameters ##############################
+    choice = 3  # 1, 2, or 3 (Select model)
+    epochs =3
+    batch= 128
+    lr = 0.01
+   ############################################################################################3
 
-            save_file_name = "model_" + str(choice) + "_batch_" + str(batch) + "_lr_" + str(lr)
-            hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
+    # open file for writng the 
+    f = open('accuracy_model'+str(choice)+'.txt', 'w')
+    
+    #build model
+    model = select_model(choice, lr)
 
-            # display training details
-            plot_training_metrics(save_file_name, hist)
+    #file name to save plot
+    save_file_name = "model_" + str(choice) + "_batch_" + str(batch) + "_lr_" + str(lr)
+    
+    #fit the model
+    hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
 
-            # evaluate model
-            loss, acc = model.evaluate(x_test, y_test, verbose=2)
+    # display training details
+    plot_training_metrics(save_file_name, hist)
 
-            f.write("Accuracy config : " + save_file_name + " = ")
-            f.write(str(acc * 100))
-            f.write("\n")
+    # evaluate model
+    loss, acc = model.evaluate(x_test, y_test, verbose=2)
 
-            print("Test Loss: ", loss)
-            print("Test Accuracy", acc)
+    #wrong classifications
+    visualize_correct_and_wrong_predictions(choice , model, x_test, y_test,save_file_name)
 
-            # save model
-            save_model(model, save_file_name)
+    f.write("Accuracy config : " + save_file_name + " = ")
+    f.write(str(acc * 100))
+    f.write("\n")
 
-            break
+    print("Test Loss: ", loss)
+    print("Test Accuracy", acc)
+
+    # save model
+    # save_model(model, save_file_name)
+    
+    #Close file 
     f.close()
 
 
@@ -272,4 +295,4 @@ if __name__ == "__main__":
     run_program()
 
     # show plots
-    plt.show()
+    # plt.show()
