@@ -160,12 +160,13 @@ def model(lr):
 
 
 # Function to Run the model
+
 def run_program():
 
     choice = 1
-    model = model(0.001)
+    model1 = model(0.001)
     epochs = 30
-    model.summary()
+    model1.summary()
 
     # get data
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
@@ -174,7 +175,7 @@ def run_program():
     train_augmented, val_agumented = augment_data(x_train, y_train, x_val, y_val)
 
     # train model
-    hist = model.fit_generator(train_augmented,
+    hist = model1.fit_generator(train_augmented,
                                   validation_data=val_agumented,
                                   epochs=epochs,
                                   verbose=1)
@@ -184,12 +185,12 @@ def run_program():
     plot_training_metrics(choice, hist)
 
     # evaluate model
-    loss, acc = model.evaluate(x_test, y_test, verbose=2)
+    loss, acc = model1.evaluate(x_test, y_test, verbose=2)
     print("Test Loss: ", loss)
     print("Test Accuracy", acc)
 
     # save model
-    save_model(model, choice)
+    save_model(model1, choice)
 
     plt.show()
 

@@ -29,7 +29,6 @@ def load_and_process_data():
     This model loads the MNIST dataset from the keras api
 
     """
-    num_classes = 10
 
     # load dataset
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -59,15 +58,13 @@ def load_and_process_data():
 
 # draw the training statistics
 def plot_training_metrics(choice, history):
+
+    """
+     This function plots history of training metrics
+
+    """
     # directory to save the plots
-<<<<<<< HEAD
-    path = os.path.join('results', str(choice))
-=======
-    path = os.path.join('results/cifar10', str(choice))
->>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
-    if not os.path.exists(path):
-        os.makedirs(path)
-    # plotting the metrics
+
     fig = plt.figure(1)
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
@@ -75,7 +72,7 @@ def plot_training_metrics(choice, history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
-    plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choice), format='png')
+   # plt.savefig('{}/cifar-accuracy-model-{}.png'.format(path, choice), format='png')
 
     plt.figure(2)
     plt.plot(history.history['loss'])
@@ -85,13 +82,14 @@ def plot_training_metrics(choice, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
+    #plt.savefig('{}/cifar-loss-model-{}.png'.format(path, choice), format='png')
 
 
 # First baseline model
 def Model1(lr):
     """
      First baseline model ( simpler one)
+
     """
     model = Sequential()
     model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu', kernel_initializer='he_uniform',
@@ -126,7 +124,7 @@ def Model2(lr):
     model.add(Dense(10, activation='softmax'))
 
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
@@ -153,17 +151,19 @@ def Model3(lr):
     model.add(Dense(10, activation='softmax'))
 
     # compile model
-    opt = SGD(lr=0.001, momentum=0.9)
+    opt = SGD(lr=lr, momentum=0.9)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
 
 # save model
 def save_model(model, model_name):
+
     # saving the model
     save_dir = "results/cifar10/"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
     file_name = str(model_name) + '.h5'
     model_path = os.path.join(save_dir, file_name)
     model.save(model_path)
@@ -189,33 +189,10 @@ def select_model(choice, lr):
 
 # Function to Run the model
 def run_program():
+
     # load the dataset
     x_train, y_train, x_test, y_test, x_val, y_val = load_and_process_data()
 
-    # define model
-<<<<<<< HEAD
-<<<<<<< HEAD
-    choice = 2 # 1, 2, or 3
-=======
-    choice = 3 # 1, 2, or 3
->>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
-    model = select_model(choice)
-    model.summary()
-
-    # train model
-    # Hyperparameters
-    batch_size = 128
-<<<<<<< HEAD
-    epochs = 60
-    validation_split = 0.2
-    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
-=======
-    epochs = 20
-    hist = model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_data=(x_val, y_val))
->>>>>>> d5e2792614e7d001c54e425052f864d3e4b8ad73
-=======
-
-    # train model
     # Hyperparameters
     epochs = 1
     batch_size = [64, 128]
@@ -225,7 +202,6 @@ def run_program():
         for lr in learnig_rate:
             choice = 3  # 1, 2, or 3
             model = select_model(choice, lr)
->>>>>>> ff2d09a73b3fbb4f848353580f56d889b7de5e44
 
             save_file_name = "model_" + str(choice) + "_batch_" + str(batch) + "_lr_" + str(lr)
             hist = model.fit(x_train, y_train, batch_size=batch, epochs=epochs, validation_data=(x_val, y_val))
