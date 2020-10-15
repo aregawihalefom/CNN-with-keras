@@ -23,7 +23,6 @@ import numpy as np
 from mlxtend.plotting import plot_confusion_matrix
 
 
-
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
 
