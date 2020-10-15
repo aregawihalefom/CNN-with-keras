@@ -24,6 +24,7 @@ from tensorflow.keras.applications import vgg16
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
 
@@ -153,6 +154,7 @@ def Network(lr,retrain_vgg=False):
 
 
 # Function to Run the model
+
 def run_program():
 
 
@@ -192,7 +194,7 @@ def run_program():
     plot_training_metrics(choice, hist)
 
     # evaluate model
-    loss, acc = model.evaluate(x_test, y_test, verbose=2)
+    loss, acc = model1.evaluate(x_test, y_test, verbose=2)
     print("Test Loss: ", loss)
     print("Test Accuracy", acc)
 

@@ -1,0 +1,1 @@
+Accuracy config : model_3_batch_128_lr_0.01 = 98.96000027656555

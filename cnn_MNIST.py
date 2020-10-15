@@ -15,13 +15,14 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.optimizers import RMSprop, SGD, Adam
-from mlxtend.plotting import plot_confusion_matrix
+from sklearn.metrics import confusion_matrix
+
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-
-from sklearn.metrics import confusion_matrix
 from mlxtend.plotting import plot_confusion_matrix
+
+
 
 print('tensorflow:', tf.__version__)
 print('keras:', tensorflow.keras.__version__)
@@ -32,10 +33,6 @@ def generate_confusion_matrix(true_labels,predictedLabels,name):
     '''This method generates confusion matrix'''
 
     labels=[0,1,2,3,4,5,6,7,8,9]
-    path = os.path.join('results/mnist/confusionMatrix_ex_1')
-    
-    if not os.path.exists(path):
-        os.mkdir(path)
     
     #create confusion matrix 
     cf=confusion_matrix(true_labels,predictedLabels)
@@ -85,9 +82,7 @@ def load_and_process_data():
 # draw the training statistics
 def plot_training_metrics(choosen_model, history):
     # directory to save the plots
-    path = os.path.join('results/mnist/')
-    if not os.path.exists(path):
-        os.mkdir(path)
+    
     # plotting the metrics
     fig = plt.figure(1)
     plt.plot(history.history['accuracy'])
@@ -96,7 +91,6 @@ def plot_training_metrics(choosen_model, history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='lower right')
-    plt.savefig('{}/accuracy-model-{}.png'.format(path, choosen_model), format='png')
     plt.show()
 
     plt.figure(2)
@@ -107,21 +101,15 @@ def plot_training_metrics(choosen_model, history):
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper right')
     plt.tight_layout()
-    plt.savefig('{}/loss-model-{}.png'.format(path, choosen_model), format='png')
     plt.show()
 
 # visualize  wrong predictions
 def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test,name):
 
-    path = os.path.join('results', str(choosen_model))
-    print(path)
-    if not os.path.exists(path):
-        os.mkdir(path)
-
+    
     # predicted classes
     predicted_classes = model.predict_classes(X_test)
 
-   
     # reverse the true level from one hot encoding back  to normal ture lavel
     y_reversed = np.argmax(y_test, axis=1)
 
@@ -138,14 +126,14 @@ def visualize_correct_and_wrong_predictions(choosen_model, model, X_test, y_test
 
     # adapt figure size to accomodate 18 subplots
 
-    plt.figure(figsize=(6,6))
-    wrong_nine = incorrect_indices[:9]
+    plt.figure(3)
+    wrong_nine = incorrect_indices[:18]
     # plot 9 incorrect predictions
     for i, incorrect in enumerate(wrong_nine):
-        plt.subplot(3, 3, i + 1)
+        plt.subplot(6, 3, i + 1)
         plt.imshow(X_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
         plt.title(
-            "True = {} \n Predicted = {}".format(y_reversed[incorrect], predicted_classes[incorrect]))
+            "Predicted = {}".format(predicted_classes[incorrect]))
         plt.xticks([])
         plt.yticks([])
     
@@ -261,8 +249,8 @@ def run_program():
 
     # train model
     ############################################# Hyperparameters ##############################
-    choice = 1  # 1, 2, or 3 (Select model)
-    epochs =5
+    choice = 3  # 1, 2, or 3 (Select model)
+    epochs =3
     batch= 128
     lr = 0.01
    ############################################################################################3
